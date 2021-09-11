@@ -1,0 +1,11 @@
+config BR2_PACKAGE_APPLICATION
+	bool "application"
+	default y
+
+	select BR2_PACKAGE_LIBUV
+	select BR2_PACKAGE_LIBWEBSOCKETS
+	select BR2_PACKAGE_FLASHROM_CUSTOM
+	select BR2_PACKAGE_SER2NET
+
+	help
+	  TODO

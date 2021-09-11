@@ -1,0 +1,9 @@
+config BR2_PACKAGE_MT76_MAC80211
+	bool "mt76-mac80211"
+	default y
+
+	select BR2_PACKAGE_LINUX_BACKPORTS_CUSTOM
+	select BR2_PACKAGE_WIRELESS_REGDB
+
+	help
+	  TODO

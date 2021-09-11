@@ -1,0 +1,6 @@
+build/
+subsys/
+ath/
+rt2x00/
+mwl/
+brcm/

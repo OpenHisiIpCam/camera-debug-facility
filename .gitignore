@@ -1,0 +1,8 @@
+tmp/
+dl/
+*.tar.gz
+*.tar.xz
+/buildroot*
+mkdocs-material
+site
+output

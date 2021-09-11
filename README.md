@@ -1,1 +1,26 @@
 # camera-debug-facility
+
+Device for remote hands-free embedded development.
+
+End user documentation is hosted at https://www.openhisiipcam.org/camera-debug-facility.
+
+## Overview schema
+
+![schema](docs/schema-1.png)
+
+## Features
+
+### Control interfaces
+* FastEthernet
+* WiFi (ap or client)
+* http api
+* uart via telnet
+* uart via websockets
+* spi flash programmer
+* tftp server
+
+### Dut control
+* power via gpiod relay
+* uart
+* spi flash mem
+* FastEthernet
