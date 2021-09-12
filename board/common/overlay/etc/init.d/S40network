@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+ethernet_init() {
+	swconfig dev switch0 set reset
+}
+
+wifi_init() {
+	insmod /lib/modules/5.4.143/backports/compat/compat.ko
+	insmod /lib/modules/5.4.143/backports/net/wireless/cfg80211.ko
+	insmod /lib/modules/5.4.143/backports/net/mac80211/mac80211.ko
+	insmod /lib/modules/5.4.143/extra/mt76.ko
+	insmod /lib/modules/5.4.143/extra/mt7603/mt7603e.ko
+}
+
+# Debian ifupdown needs the /run/network lock directory
+mkdir -p /run/network
+
+case "$1" in
+  start)
+	printf "Starting network: "
+	ethernet_init
+	wifi_init
+	/sbin/ifup -a
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  stop)
+	printf "Stopping network: "
+	/sbin/ifdown -a
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  restart|reload)
+	"$0" stop
+	"$0" start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

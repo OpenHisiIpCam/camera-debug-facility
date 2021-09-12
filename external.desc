@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2021 OpenHisiIpCam, info@openhisiipcam.org
+# SPDX-License-Identifier: MIT
+#
+# TODO brief description
+#
+
+name: CDF_MT76X8
+desc: MT76x8 base Camera Debug Facility
