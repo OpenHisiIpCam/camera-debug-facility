@@ -36,6 +36,9 @@ plugins:
       minify_js: true
       htmlmin_opts:
           remove_comments: true
+  - with-pdf:
+      exclude_pages:
+          - 'doxygen/'
 
 # Extensions
 markdown_extensions:
