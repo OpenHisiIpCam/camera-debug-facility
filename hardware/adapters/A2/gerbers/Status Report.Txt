@@ -1,0 +1,21 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [A2.PrjPcb]
+   Generated File[A2.GTO]
+   Generated File[A2.GTP]
+   Generated File[A2.GTS]
+   Generated File[A2.GTL]
+   Generated File[A2.GBL]
+   Generated File[A2.GBS]
+   Generated File[A2.GBP]
+   Generated File[A2.GBO]
+   Generated File[A2.GM2]
+   Generated File[A2.RUL]
+   Generated File[A2.EXTREP]
+   Generated File[A2.REP]
+
+
+Files Generated   : 12
+Documents Printed : 0
+
+Finished Output Generation At 12:31:42 On 10.12.2019

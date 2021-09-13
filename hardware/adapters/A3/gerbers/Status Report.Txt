@@ -1,0 +1,12 @@
+Output: NC Drill Files
+Type  : NC Drill
+From  : Project [A3.PrjPcb]
+   Generated File[A3-Plated.TXT]
+   Generated File[A3.LDP]
+   Generated File[A3.DRR]
+
+
+Files Generated   : 3
+Documents Printed : 0
+
+Finished Output Generation At 12:40:01 On 10.12.2019
