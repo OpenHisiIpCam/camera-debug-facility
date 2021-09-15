@@ -1,0 +1,43 @@
+diff -uraN frser-duino-master/main.c frser-duino/main.c
+--- frser-duino-master/main.c	2016-11-28 01:22:00.000000000 +0300
++++ frser-duino/main.c	2021-09-15 21:48:29.773723467 +0300
+@@ -22,6 +22,7 @@
+ #include "uart.h"
+ #include "frser.h"
+ 
++#include "spihw.h"
+ 
+ int main(void) {
+ #if (defined __AVR_ATmega1280__)||(defined __AVR_ATmega1281__)||(defined __AVR_ATmega2560__)||(defined __AVR_ATmega2561__)
+diff -uraN frser-duino-master/spihw.c frser-duino/spihw.c
+--- frser-duino-master/spihw.c	2016-11-28 01:22:00.000000000 +0300
++++ frser-duino/spihw.c	2021-09-15 21:49:03.453340774 +0300
+@@ -28,6 +28,7 @@
+ 	DDR_SPI &= ~_BV(MOSI);
+ 	DDR_SPI &= ~_BV(SCK);
+ 	DDR_SPI &= ~_BV(SS);
++	DDR_SPI &= ~_BV(RELAY);//relay off, camera on
+ }
+ 
+ void flash_select_protocol(uint8_t allowed_protocols) {
+@@ -35,7 +36,8 @@
+ 	SPI_PORT |= _BV(SS);
+ 	SPI_PORT &= ~_BV(MOSI);
+ 	SPI_PORT &= ~_BV(SCK);
+-	DDR_SPI = (1<<MOSI)|(1<<SCK)|(1<<SS);
++	SPI_PORT |= _BV(RELAY);//relay on, camera off, programmator on
++	DDR_SPI = (1<<MOSI)|(1<<SCK)|(1<<SS)|(1<<RELAY);//also set relay as output
+ 	spi_init();
+ }
+ 
+diff -uraN frser-duino-master/spihw.h frser-duino/spihw.h
+--- frser-duino-master/spihw.h	2016-11-28 01:22:00.000000000 +0300
++++ frser-duino/spihw.h	2021-09-15 21:45:22.847847969 +0300
+@@ -8,6 +8,7 @@
+ #define MISO		PORTB4		/* port 12 */
+ #define MOSI 		PORTB3		/* port 11 */
+ #define SS		PORTB2		/* port 10 */
++#define RELAY		PORTB1		/* port 09 */
+ #define DDR_SPI		DDRB
+ 
+ /* Change to 1 for testing frser-duino on the LPC+SPI shield. */
