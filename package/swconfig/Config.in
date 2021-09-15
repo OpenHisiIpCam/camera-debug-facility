@@ -1,0 +1,11 @@
+config BR2_PACKAGE_SWCONFIG
+	bool "swconfig"
+	default y
+
+	select BR2_PACKAGE_LIBNL
+
+	help
+	  The program swconfig allows you to configure configurable
+	  Ethernet network switches.
+
+	  https://oldwiki.archive.openwrt.org/doc/techref/swconfig

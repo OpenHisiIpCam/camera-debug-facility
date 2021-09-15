@@ -51,6 +51,7 @@ mkdocs-material:
 mkdocs-plugins:
 	pip install mkdocs-minify-plugin
 	pip install mkdocs-with-pdf
+	#pip install mkdocs-doxygen-plugin
 
 # Run BR utils/check-package on all custom packages
 .IGNORE: check-packages

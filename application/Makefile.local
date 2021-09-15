@@ -1,0 +1,29 @@
+.PHONY: usage
+usage:
+	echo "TODO"
+
+.PHONY: build
+build: prepare
+	cd build; make 
+
+.PHONY: prepare
+prepare:
+	mkdir -p build
+	cd build; cmake ..
+
+.PHONY: clean
+clean:
+	rm -rf ./build
+
+CLANG_FORMAT=clang-format-10
+
+SRC_DIR=src
+
+SOURCES  = $(wildcard $(SRC_DIR)/*.c)
+
+.PHONY: style
+style:
+	@for src in $(SOURCES) ; do \
+                echo "Formatting $$src..." ; \
+                $(CLANG_FORMAT) -i "$$src" ; \
+        done
