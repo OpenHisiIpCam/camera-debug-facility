@@ -5,71 +5,48 @@
 # TODO brief description
 #
 
-BUILDROOT_VERSION=2021.02.4
 BR_EXTERNAL = $(abspath .)
 
 .PHONY: usage
 usage:
 	@echo "TODO"
 
+vendors/buildroot:
+	make -C vendors buildroot
+
 .PHONY: list-defconfigs
-list-defconfigs: buildroot
+list-defconfigs: vendors/buildroot
 	make \
-                -C $(abspath buildroot) \
+                -C $(abspath vendors/buildroot) \
                 BR2_EXTERNAL=$(BR_EXTERNAL) \
                 list-defconfigs
 
 .PHONY: %_defconfig
-%_defconfig: buildroot
+%_defconfig: vendors/buildroot
 	@test -f ./configs/$@ || (echo "Config $@ does not exist"; exit 1)
 	make \
-                -C $(abspath buildroot) \
+                -C $(abspath vendors/buildroot) \
                 BR2_EXTERNAL=$(abspath $(BR_EXTERNAL)) \
                 O=$(abspath output/$(subst _defconfig,,$@)) \
                 $@
 
-
-.PHONY: prepare
-prepare: buildroot mkdocs-material mkdocs-plugins
-
-dl:
-	mkdir -p dl
-
-dl/buildroot-$(BUILDROOT_VERSION).tar.gz: | dl
-	wget -O $@ https://buildroot.org/downloads/buildroot-$(BUILDROOT_VERSION).tar.gz
-
-buildroot-$(BUILDROOT_VERSION): dl/buildroot-$(BUILDROOT_VERSION).tar.gz
-	tar -m -xvf $<
-
-buildroot: buildroot-$(BUILDROOT_VERSION)
-	ln -s $< $@
-
-.PHONY: mkdocs-material
-mkdocs-material:
-	git clone https://github.com/squidfunk/mkdocs-material.git --depth 1
-	pip install -r ./mkdocs-material/requirements.txt
-	pip install ./mkdocs-material
-
-mkdocs-plugins:
-	pip install mkdocs-minify-plugin
-	pip install mkdocs-with-pdf
-	#pip install mkdocs-doxygen-plugin
-
 docker-build:
 	docker build -t local/camera-debug-facility:last .
 
-docker-build-docs:
+docker-run:
 	docker run -it -v $(abspath .):/home/user/camera-debug-facility --entrypoint "/bin/bash" local/camera-debug-facility:last 
+
+pack-dl:
+	tar -cvf dl.tar ./dl
 
 # Run BR utils/check-package on all custom packages
 .IGNORE: check-packages
-check-packages: buildroot
-	buildroot/utils/check-package -b $(BR_EXTERNAL)/package/*/*
+check-packages: vendors/buildroot
+	vendors/buildroot/utils/check-package -b $(BR_EXTERNAL)/package/*/*
 
 .PHONY: mrproper
 mrproper:
-	rm -rf buildroot-$(BUILDROOT_VERSION)
-	rm -rf buildroot
+	make -C vendors clean
 	rm -rf dl
 	rm -rf site
 	rm -rf mkdocs-material

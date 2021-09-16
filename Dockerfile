@@ -43,14 +43,22 @@ RUN apt-get install -y --no-install-recommends \
         apt-get -y autoremove && \
         apt-get -y clean
 
+#RUN apt-get intall -y --no-install-recommends \
+#	argagg-dev \
+#	catch2 \
+#	libfmt-dev \
+#	nlohmann-json-dev \
+#	\
+#	\
+#	&& \
+#        apt-get -y autoremove && \
+#        apt-get -y clean
 
 #RUN mkdir ~/camera-debug-facility
 COPY ./Makefile .
 RUN cat Makefile
 RUN make mkdocs-material && \
 	make mkdocs-plugins
-
-
 
 RUN useradd -ms /bin/bash user && \
     chown -R user:user /home/user
