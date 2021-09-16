@@ -1,4 +1,4 @@
-name: Build and deploy documentation
+name: Download, pack and publish all main deps
 
 on:
   workflow_dispatch
