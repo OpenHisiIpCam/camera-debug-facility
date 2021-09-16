@@ -1,4 +1,4 @@
-name: Download, pack and publish all main deps
+name: Build release
 
 on:
   workflow_dispatch
