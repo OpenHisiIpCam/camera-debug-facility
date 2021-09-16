@@ -1,0 +1,13 @@
+name: Build and deploy documentation
+
+on:
+  workflow_dispatch
+
+jobs:
+  deploy:
+    runs-on: ubuntu:20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: make camera-debug-facility_defconfig
+      - run: make -C output/camera-debug-facility source
+      - run: make pack-dl
