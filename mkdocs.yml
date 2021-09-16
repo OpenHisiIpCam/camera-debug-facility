@@ -8,9 +8,17 @@ copyright: Copyright &copy; 2021 OpenHisiIpCam team
 repo_url: https://github.com/OpenHisiIpCam/camera-debug-facility
 repo_name: camera-debug-facility
 
+edit_uri: ""
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/OpenHisiIpCam/camera-debug-facility
+
 theme:
-  name: null
-  custom_dir: mkdocs-material/material
+  name: material
+  #custom_dir: mkdocs-material/material
 
   # 404 page
   static_templates:
@@ -66,7 +74,7 @@ plugins:
       #render_js: true
       #headless_chrome_path: headless-chromium
       #
-      #output_path: any-place/document.pdf
+      output_path: camera-debug-facility-user-manual.pdf
       #enabled_if_env: ENABLE_PDF_EXPORT
       #
       #debug_html: true
@@ -112,3 +120,6 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.tilde
 
+nav:
+    - Home: index.md
+    - User Manual: user-manual/index.md
