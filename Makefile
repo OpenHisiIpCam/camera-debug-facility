@@ -44,14 +44,22 @@ buildroot-$(BUILDROOT_VERSION): dl/buildroot-$(BUILDROOT_VERSION).tar.gz
 buildroot: buildroot-$(BUILDROOT_VERSION)
 	ln -s $< $@
 
+.PHONY: mkdocs-material
 mkdocs-material:
 	git clone https://github.com/squidfunk/mkdocs-material.git --depth 1
-	pip install -r mkdocs-material/requirements.txt
+	pip install -r ./mkdocs-material/requirements.txt
+	pip install ./mkdocs-material
 
 mkdocs-plugins:
 	pip install mkdocs-minify-plugin
 	pip install mkdocs-with-pdf
 	#pip install mkdocs-doxygen-plugin
+
+docker-build:
+	docker build -t local/camera-debug-facility:last .
+
+docker-build-docs:
+	docker run -it -v $(abspath .):/home/user/camera-debug-facility --entrypoint "/bin/bash" local/camera-debug-facility:last 
 
 # Run BR utils/check-package on all custom packages
 .IGNORE: check-packages

@@ -44,26 +44,32 @@ RUN apt-get install -y --no-install-recommends \
         apt-get -y clean
 
 
+#RUN mkdir ~/camera-debug-facility
+COPY ./Makefile .
+RUN cat Makefile
+RUN make mkdocs-material && \
+	make mkdocs-plugins
+
+
+
 RUN useradd -ms /bin/bash user && \
     chown -R user:user /home/user
 
 ENV DEBIAN_FRONTEND newt
-
 RUN id
 RUN pwd
 
 USER user
 WORKDIR /home/user
 
-RUN id
-RUN pwd
+RUN mkdir /home/user/camera-debug-facility
 
-COPY --chown=user . camera-debug-facility
-USER root
-RUN pip install mkdocs
-RUN pip install mkdocs-material
-RUN make -C camera-debug-facility mkdocs-material
-RUN make -C camera-debug-facility mkdocs-plugins
-USER user
-RUN cd camera-debug-facility; mkdocs build
-COPY /home/user/camera-debug-facility/site/pdf/document.pdf .
+#COPY --chown=user . camera-debug-facility
+#USER root
+#RUN pip install mkdocs
+#RUN pip install mkdocs-material
+#RUN make -C camera-debug-facility mkdocs-material
+#RUN make -C camera-debug-facility mkdocs-plugins
+#USER user
+#RUN cd camera-debug-facility; mkdocs build
+#COPY /home/user/camera-debug-facility/site/pdf/document.pdf .
