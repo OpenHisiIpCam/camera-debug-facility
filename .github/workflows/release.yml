@@ -9,5 +9,5 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: make camera-debug-facility_defconfig
-      - run: make -C output/camera-debug-facility source
+      - run: make -C output/camera-debug-facility
       - run: make pack-dl
