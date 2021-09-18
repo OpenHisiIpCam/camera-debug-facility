@@ -23,7 +23,7 @@ buildroot-$(BUILDROOT_VERSION): ../dl/buildroot-$(BUILDROOT_VERSION).tar.gz
 buildroot: buildroot-$(BUILDROOT_VERSION)
 	ln -s $< $@
 
-python: mkdocs-material
+python: 
 	pip install mkdocs-material
 	#pip install -r ./mkdocs-material/requirements.txt
 	#pip install ./mkdocs-material
