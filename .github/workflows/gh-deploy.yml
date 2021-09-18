@@ -11,5 +11,5 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.x
-      - run: make -C python
+      - run: make -C vendors python
       - run: mkdocs gh-deploy --force
