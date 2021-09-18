@@ -1,0 +1,10 @@
+baudrate=115200
+bootdelay=2
+stderr=uartlite@c00
+stdin=uartlite@c00
+stdout=uartlite@c00
+bootargs=mem=128M console=ttyS0,115200 root=/dev/mtdblock5
+bootcmd=mtd read nor0 0x82000000 0xa0000 0x400000; mtd read nor0 0x82400000 0x4a0000 0x10000; bootm 0x82000000 - 0x82400000;
+ipaddr=192.168.10.5
+netmask=255.255.255.0
+serverip=192.168.10.3

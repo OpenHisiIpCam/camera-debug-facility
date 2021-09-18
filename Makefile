@@ -6,6 +6,7 @@
 #
 
 BR_EXTERNAL = $(abspath .)
+PROGRAMMER = ch341a_spi
 
 .PHONY: usage
 usage:
@@ -38,6 +39,9 @@ docker-run:
 
 pack-dl:
 	tar -cvf dl.tar ./dl
+
+flashrom: vendors/flashrom/flashrom
+	vendors/flashrom/flashrom --programmer $(PROGRAMMER) -w output/camera-debug-facility/images/spi16MB.img
 
 # Run BR utils/check-package on all custom packages
 .IGNORE: check-packages

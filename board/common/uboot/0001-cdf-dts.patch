@@ -1,0 +1,76 @@
+diff -uraN uboot-2021.07-a/arch/mips/dts/mediatek,mt7628-rfb.dts uboot-2021.07-b/arch/mips/dts/mediatek,mt7628-rfb.dts
+--- uboot-2021.07-a/arch/mips/dts/mediatek,mt7628-rfb.dts	2021-07-05 18:11:28.000000000 +0300
++++ uboot-2021.07-b/arch/mips/dts/mediatek,mt7628-rfb.dts	2021-09-18 13:55:25.952891836 +0300
+@@ -1,44 +1,31 @@
+ // SPDX-License-Identifier: GPL-2.0
+-/*
+- * Copyright (C) 2020 MediaTek Inc.
+- *
+- * Author: Weijie Gao <weijie.gao@mediatek.com>
+- */
+ 
+ /dts-v1/;
+ 
+ #include "mt7628a.dtsi"
+ 
+ / {
+-	compatible = "mediatek,mt7628-rfb", "ralink,mt7628a-soc";
+-	model = "MediaTek MT7628 RFB";
++	compatible = "openhisiipcam,camera-debug-facility", "ralink,mt7628a-soc";
++	model = "camera-debug-facility";
+ 
+ 	aliases {
+ 		serial0 = &uart0;
+ 		spi0 = &spi0;
+ 	};
+ 
+-	chosen {
+-		stdout-path = &uart0;
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x08000000>;
+ 	};
+-};
+ 
+-&pinctrl {
+-	state_default: pin_state {
+-		pleds {
+-			groups = "p0led", "p1led", "p2led", "p3led", "p4led";
+-			function = "led";
+-		};
++	chosen {
++		stdout-path = &uart0;
+ 	};
+ };
+ 
+-&uart0 {
+-	status = "okay";
+-};
+-
+ &spi0 {
+ 	status = "okay";
+-	num-cs = <2>;
++	num-cs = <1>;
+ 
+ 	spi-flash@0 {
+ 		#address-cells = <1>;
+@@ -50,18 +37,7 @@
+ };
+ 
+ &eth {
+-	mediatek,wan-port = <0>;
+-
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&ephy_router_mode>;
+-};
+-
+-&mmc {
+-	bus-width = <4>;
+-	cap-sd-highspeed;
+-
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&sd_router_mode>;
+-
+-	status = "okay";
++	mediatek,poll-link-phy = <0>;
+ };

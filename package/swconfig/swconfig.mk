@@ -4,8 +4,9 @@
 #
 ################################################################################
 
-SWCONFIG_VERSION = 445ace0
-SWCONFIG_SITE =  $(call github,rains31,swconfig,$(SWCONFIG_VERSION))
+SWCONFIG_VERSION = local
+SWCONFIG_SITE = $(SWCONFIG_PKGDIR)/src
+SWCONFIG_SITE_METHOD = local
 SWCONFIG_LICENSE = GPL-2.0
 SWCONFIG_DEPENDENCIES = libnl
 

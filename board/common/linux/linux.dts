@@ -1,0 +1,141 @@
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "openhisiipcam,camera-debug-facility", "mediatek,mt7628an-soc";
+	model = "camera-debug-facility";
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		serial0 = &uartlite;
+	};
+};
+
+&state_default {
+	/*
+	gpio {
+		groups = "gpio";
+		function = "gpio";
+	};
+
+	refclk {
+		groups = "refclk";
+		function = "gpio";
+	};
+
+	i2s {
+		groups = "i2s";
+		function = "gpio";
+	};
+
+	spis {
+		groups = "spis";
+		function = "gpio";
+	};
+
+	wled_an {
+		groups = "wled_an";
+		function = "gpio";
+	};
+
+	wdt {
+		groups = "wdt";
+		function = "gpio";
+	};
+	*/
+};
+
+&ethernet {
+	status = "okay";
+        mtd-mac-address = <&factory 0x4>;
+};
+
+&wmac {
+        status = "okay";
+        ralink,mtd-eeprom = <&factory 0x0>;
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_pins>, <&spi_cs1_pins>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+                                label = "u-boot-env";
+                                reg = <0x80000 0x10000>;
+                                read-only;
+                        };
+
+			factory: partition@90000 {
+                                label = "factory";
+                                reg = <0x90000 0x10000>;
+                                read-only;
+                        };
+
+            		partition@A0000 {
+                		label = "kernel";
+                		reg = <0xA0000 0x400000>;
+            		};
+
+            		partition@4A0000 {
+                		label = "dtb";
+                		reg = <0x4A0000 0x10000>;
+            		};
+
+			partition@4B0000 {
+                                label = "rootfs";
+                                reg = <0x4B0000 0x400000>;
+                        };
+
+			partition@8B0000 {
+                                label = "user";
+                                reg = <0x8B0000 0x750000>;
+                        };
+		};
+	};
+
+        spidev@1 {
+                #address-cells = <1>;
+                #size-cells = <1>;
+                compatible = "linux,spidev";
+                reg = <1>;
+                spi-max-frequency = <40000000>;
+        };
+};
+
+/*
+&i2c {
+	status = "okay";
+};
+*/
+
+&uartlite {
+	status = "okay";
+};
+
+/*
+&uart1 {
+        status = "okay";
+};
+*/

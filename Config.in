@@ -5,6 +5,12 @@
 # TODO brief description
 #
 
+menu "Board config"
+	config CDF_BOARD_RAM
+		hex "RAM"
+		default 0x8000000
+endmenu
+
 source "$BR2_EXTERNAL_CDF_MT76X8_PATH/package/quilt/Config.in.host"
 source "$BR2_EXTERNAL_CDF_MT76X8_PATH/package/linux-backports-custom/Config.in"
 source "$BR2_EXTERNAL_CDF_MT76X8_PATH/package/mt76-mac80211/Config.in"
