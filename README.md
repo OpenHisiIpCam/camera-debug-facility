@@ -1,6 +1,6 @@
 # camera-debug-facility
 
-Device for remote hands-free embedded development.
+Hands free remote embedded development device.
 
 End user documentation is hosted at https://www.openhisiipcam.org/camera-debug-facility.
 
