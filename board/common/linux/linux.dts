@@ -105,12 +105,12 @@
 
 			partition@4B0000 {
                                 label = "rootfs";
-                                reg = <0x4B0000 0x400000>;
+                                reg = <0x4B0000 0x800000>;
                         };
 
-			partition@8B0000 {
+			partition@CB0000 {
                                 label = "user";
-                                reg = <0x8B0000 0x750000>;
+                                reg = <0xCB0000 0x350000>;
                         };
 		};
 	};

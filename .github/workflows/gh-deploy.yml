@@ -11,6 +11,5 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.x
-      - run: make mkdocs-material
-      - run: make mkdocs-plugins
+      - run: make -C python
       - run: mkdocs gh-deploy --force

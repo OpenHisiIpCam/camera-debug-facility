@@ -57,8 +57,7 @@ RUN apt-get install -y --no-install-recommends \
 #RUN mkdir ~/camera-debug-facility
 COPY ./vendors/Makefile .
 #RUN cat Makefile
-RUN make mkdocs-material && \
-    make python
+RUN make python
 
 RUN useradd -ms /bin/bash user && \
     chown -R user:user /home/user

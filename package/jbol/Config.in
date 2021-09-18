@@ -1,0 +1,7 @@
+config BR2_PACKAGE_JBOL
+	bool "jbol"
+
+        select BR2_PACKAGE_JQ
+
+        help
+          TODO

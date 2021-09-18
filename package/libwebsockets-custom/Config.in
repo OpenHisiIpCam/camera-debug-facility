@@ -1,0 +1,17 @@
+config BR2_PACKAGE_LIBWEBSOCKETS_CUSTOM
+	bool "libwebsockets-custom"
+	depends on !BR2_STATIC_LIBS
+	depends on !BR2_PACKAGE_LIBWEBSOCKETS
+	select BR2_PACKAGE_ZLIB
+	help
+	  Libwebsockets is a lightweight pure C library built to use
+	  minimal CPU and memory resources, and provide fast throughput
+	  in both directions.
+
+	  https://libwebsockets.org/
+
+comment "libwebsockets needs a toolchain w/ dynamic library"
+	depends on BR2_STATIC_LIBS
+
+comment "disable libwesockets to enable custom version"
+	depends on BR2_PACKAGE_LIBWEBSOCKETS
