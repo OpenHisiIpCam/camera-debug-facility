@@ -20,6 +20,10 @@
   <link rel="stylesheet" type="text/css" href="semantic.min.css">
   <script src="semantic.min.js"></script>
 
+  <link rel="stylesheet" href="xterm/xterm.css" />
+  <script src="xterm/xterm.js"></script>
+
+
   <script>
   $(document)
     .ready(function() {
@@ -27,11 +31,61 @@
       $('.ui.menu .ui.dropdown').dropdown({
         on: 'hover'
       });
-    })
-  ;
+    });
+/*
+$('.ui.sticky')
+  .sticky({
+    context: '#context'
+  });
+  */
   </script>
 </head>
 <body>
+
+<div class="ui menu fixed top sticky">
+  <div class="header item">Debug facility</div>
+  <!--<a class="active item">Link</a>
+  <a class="item">Link</a>-->
+  <div class="ui dropdown item" tabindex="0">
+    Navigation
+    <i class="dropdown icon"></i>
+    <div class="menu transition hidden" tabindex="-1">
+      <div class="item">System</div>
+      <div class="item">DUT</div>
+      <div class="item">Programmer</div>
+      <!--<div class="divider"></div>-->
+      <div class="item">Serial</div>
+      <!--<div class="divider"></div>-->
+      <div class="item">TFTPD</div>
+    </div>
+  </div>
+  <!--
+  <div class="right menu">
+    <div class="item">
+      <div class="ui action left icon input">
+        <i class="search icon"></i>
+        <input type="text" placeholder="Search">
+        <button class="ui button">Submit</button>
+      </div>
+    </div>
+    <a class="item">Link</a>
+  </div>
+  -->
+</div>
+
+<div class="ui grid container">
+  <div class="row">
+    <div class="column">
+      <h1 class="ui header">Bootstrap Migration</h1>
+      <div id="terminal"></div>
+      <script>
+        var term = new Terminal();
+        term.open(document.getElementById('terminal'));
+        term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+      </script>
+    </div>
+  </div>
+</div>
 
 <div class="ui grid container">
   <div class="row">

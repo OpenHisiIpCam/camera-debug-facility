@@ -16,7 +16,12 @@
 };
 
 &state_default {
-	/*
+	gpio {
+                groups = "wdt", "gpio";
+                function = "gpio";
+        };
+};
+/*
 	gpio {
 		groups = "gpio";
 		function = "gpio";
@@ -46,8 +51,11 @@
 		groups = "wdt";
 		function = "gpio";
 	};
-	*/
+	uart1_pins {
+		
+	};
 };
+*/
 
 &ethernet {
 	status = "okay";
@@ -68,7 +76,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <40000000>;
+		spi-max-frequency = <10000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -120,7 +128,7 @@
                 #size-cells = <1>;
                 compatible = "linux,spidev";
                 reg = <1>;
-                spi-max-frequency = <40000000>;
+                spi-max-frequency = <100000000>;
         };
 };
 
@@ -134,8 +142,6 @@
 	status = "okay";
 };
 
-/*
 &uart1 {
         status = "okay";
 };
-*/
