@@ -40,6 +40,9 @@ docker-run:
 pack-dl:
 	tar -cvf dl.tar ./dl
 
+vendors/flashrom/flashrom:
+	make -C vendors flashrom
+
 flashrom: vendors/flashrom/flashrom
 	vendors/flashrom/flashrom --programmer $(PROGRAMMER) -w output/camera-debug-facility/images/spi16MB.img
 

@@ -24,3 +24,10 @@ End user documentation is hosted at https://www.openhisiipcam.org/camera-debug-f
 * uart
 * spi flash mem
 * FastEthernet
+
+## Implementation
+
+### Proposed deploy schema
+
+squashfs rootfs to ram
+jffs2 user via overlay
