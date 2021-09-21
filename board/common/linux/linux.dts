@@ -21,41 +21,6 @@
                 function = "gpio";
         };
 };
-/*
-	gpio {
-		groups = "gpio";
-		function = "gpio";
-	};
-
-	refclk {
-		groups = "refclk";
-		function = "gpio";
-	};
-
-	i2s {
-		groups = "i2s";
-		function = "gpio";
-	};
-
-	spis {
-		groups = "spis";
-		function = "gpio";
-	};
-
-	wled_an {
-		groups = "wled_an";
-		function = "gpio";
-	};
-
-	wdt {
-		groups = "wdt";
-		function = "gpio";
-	};
-	uart1_pins {
-		
-	};
-};
-*/
 
 &ethernet {
 	status = "okay";
@@ -132,11 +97,25 @@
         };
 };
 
-/*
 &i2c {
 	status = "okay";
+	clock-frequency = <400000>;
+
+	oled@3c {
+		compatible = "solomon,ssd1306fb-i2c";
+ 		reg = <0x3c>;
+		solomon,width = <128>;
+		solomon,height = <64>;
+		solomon,page-offset = <0>;
+		solomon,com-invdir = <1>;
+ 	};
+	
+	ina219@40 {
+		compatible = "ti,ina219";
+		reg = <0x40>;
+		shunt-resistor = <100000>;
+	};
 };
-*/
 
 &uartlite {
 	status = "okay";
