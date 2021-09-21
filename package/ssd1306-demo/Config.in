@@ -1,0 +1,2 @@
+config BR2_PACKAGE_SSD1306_DEMO
+        bool "ssd1306-demo"
