@@ -13,11 +13,29 @@
 	aliases {
 		serial0 = &uartlite;
 	};
+
+	rotary@0 {
+	        compatible = "rotary-encoder";
+	        gpios = <&gpio 39 0>, <&gpio 40 0>; /* GPIO19 is inverted */
+	        linux,axis = <1>; /* REL_X */
+	        rotary-encoder,encoding = "gray";
+        	rotary-encoder,relative-axis;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		left {
+			label = "GPIO Key ENTER";
+			linux,code = <28>;
+			gpios = <&gpio 41 1>;
+		};
+	};
 };
 
 &state_default {
 	gpio {
-                groups = "wdt", "gpio";
+                groups = "wdt", "gpio", "p2led_an", "p3led_an", "p4led_an";
                 function = "gpio";
         };
 };
