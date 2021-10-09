@@ -9,3 +9,4 @@
 #env
 
 ${PWD}/support/scripts/genimage.sh -c ${BR2_EXTERNAL_CDF_MT76X8_PATH}/board/common/genimage/16MB.cfg
+${PWD}/support/scripts/genimage.sh -c ${BR2_EXTERNAL_CDF_MT76X8_PATH}/board/common/genimage/32MB.cfg

@@ -43,8 +43,11 @@ pack-dl:
 vendors/flashrom/flashrom:
 	make -C vendors flashrom
 
-flashrom: vendors/flashrom/flashrom
+flashrom16: vendors/flashrom/flashrom
 	vendors/flashrom/flashrom --programmer $(PROGRAMMER) -w output/camera-debug-facility/images/spi16MB.img
+
+flashrom32: vendors/flashrom/flashrom
+	vendors/flashrom/flashrom --programmer $(PROGRAMMER) -w output/camera-debug-facility/images/spi32MB.img
 
 # Run BR utils/check-package on all custom packages
 .IGNORE: check-packages

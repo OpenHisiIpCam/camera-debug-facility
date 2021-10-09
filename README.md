@@ -8,6 +8,10 @@ End user documentation is hosted at https://www.openhisiipcam.org/camera-debug-f
 
 ![schema](docs/schema-1.png)
 
+## Prototype
+
+![prototype](development-notes/prototype.jpg)
+
 ## Features
 
 ### Control interfaces

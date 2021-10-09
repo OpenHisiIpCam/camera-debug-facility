@@ -6,10 +6,10 @@
 #
 
 BUILDROOT_VERSION=2021.02.4
-#MKDOCS_MATERIAL_VERSION=7.2.6
-FLASHROM_VERSION=1.2
+FLASHROM_VERSION=7b9c74f
+#MCP_VERSION=2.0.1
 
-all: buildroot flashrom python
+all: buildroot flashrom merge_config_plus python
 
 ../dl:
 	mkdir -p ../dl
@@ -25,40 +25,33 @@ buildroot: buildroot-$(BUILDROOT_VERSION)
 
 python: 
 	pip install mkdocs-material
-	#pip install -r ./mkdocs-material/requirements.txt
-	#pip install ./mkdocs-material
 	pip install mkdocs-minify-plugin
 	pip install mkdocs-with-pdf
 	pip install qrcode
 
-#../dl/mkdocs-material-$(MKDOCS_MATERIAL_VERSION).tar.gz: | ../dl
-#	wget -O $@ https://github.com/squidfunk/mkdocs-material/archive/refs/tags/$(MKDOCS_MATERIAL_VERSION).tar.gz
-#
-#mkdocs-material-$(MKDOCS_MATERIAL_VERSION): ../dl/mkdocs-material-$(MKDOCS_MATERIAL_VERSION).tar.gz
-#	tar -m -xvf $<
-#
-#mkdocs-material: mkdocs-material-$(MKDOCS_MATERIAL_VERSION)
-#	ln -s $< $@
-
 ../dl/flashrom-$(FLASHROM_VERSION).tar.gz: | ../dl
-	wget -O $@ https://github.com/flashrom/flashrom/archive/refs/tags/v$(FLASHROM_VERSION).tar.gz
+	wget -O $@ https://github.com/flashrom/flashrom/tarball/$(FLASHROM_VERSION)
 
-flashrom-$(FLASHROM_VERSION): ../dl/flashrom-$(FLASHROM_VERSION).tar.gz
+flashrom-flashrom-$(FLASHROM_VERSION): ../dl/flashrom-$(FLASHROM_VERSION).tar.gz
 	tar -m -xvf $<
 
-flashrom-$(FLASHROM_VERSION)/.built: flashrom-$(FLASHROM_VERSION)
-	make -C flashrom-$(FLASHROM_VERSION)
+flashrom-flashrom-$(FLASHROM_VERSION)/.built: flashrom-flashrom-$(FLASHROM_VERSION)
+	make -C flashrom-flashrom-$(FLASHROM_VERSION)
 	touch $@
 
-flashrom: flashrom-$(FLASHROM_VERSION)/.built
-	ln -s flashrom-$(FLASHROM_VERSION) $@
+flashrom: flashrom-flashrom-$(FLASHROM_VERSION)/.built
+	ln -s flashrom-flashrom-$(FLASHROM_VERSION) $@
 
-#doxybook2: doxybook2-linux-amd64-v1.3.6.zip
-#doxybook2-linux-amd64-v1.3.6.zip:
-#	wget https://github.com/matusnovak/doxybook2/releases/download/v1.3.6/doxybook2-linux-amd64-v1.3.6.zip
+#../dl/merge_config_plus-$(MCP_VERSION).tar.gz:
+#	wget https://github.com/OpenHisiIpCam/merge_config_plus/archive/refs/tags/v$(MCP_VERSION).tar.gz -O $@
+
+#merge_config_plus-$(MCP_VERSION): ../dl/merge_config_plus-$(MCP_VERSION).tar.gz
+#	tar -m -xvf $<
+
+#merge_config_plus: merge_config_plus-$(MCP_VERSION)
+#	ln -s $< $@
 
 .PHONY: clean
 clean:
 	rm -rf buildroot*
-	#rm -rf mkdocs-material*
 	rm -rf flashrom*

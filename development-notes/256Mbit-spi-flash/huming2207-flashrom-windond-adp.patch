@@ -1,0 +1,670 @@
+From 197c4965d11065b39efe96e191acc2b7ac3450de Mon Sep 17 00:00:00 2001
+From: Jackson Ming Hu <huming2207@gmail.com>
+Date: Fri, 9 Feb 2018 15:31:39 +0800
+Subject: [PATCH] status_register: implement Winbond ADP bit r/w support
+
+Some Winbond W25Q flash chips (larger than 128Mbit) support 4-byte addressing mode.
+Those chips also allows setting to 4-byte addressing as default when powering up.
+
+But some devices may not support 4-byte addressing mode in their bootloaders/kernels.
+As a result, this update allows user to read/enable/disable this feature by setting
+the ADP bit in the 3rd status register inside the flash chip.
+
+Ref: https://www.winbond.com/resource-files/w25q256fv_revg1_120214_qpi_website_rev_g.pdf
+	Page 12, 18, 33-35
+
+Change-Id: I54cd59e0a3cc1f08b2c03db01d73bc0a0170b192
+Signed-off-by: Jackson Ming Hu <huming2207@gmail.com>
+---
+ chipdrivers.h     |   4 +-
+ cli_classic.c     |  40 +++++++--
+ it87spi.c         |   2 +-
+ libflashrom.h     |   8 ++
+ spi.h             |  10 +++
+ spi25.c           |   2 +-
+ spi25_statusreg.c | 209 ++++++++++++++++++++++++++++++++++++++--------
+ 7 files changed, 233 insertions(+), 42 deletions(-)
+
+diff --git a/chipdrivers.h b/chipdrivers.h
+index 8405220d7..762bf590a 100644
+--- a/chipdrivers.h
++++ b/chipdrivers.h
+@@ -66,7 +66,7 @@ int spi_exit_4ba(struct flashctx *flash);
+ 
+ 
+ /* spi25_statusreg.c */
+-uint8_t spi_read_status_register(struct flashctx *flash);
++uint8_t spi_read_status_register(struct flashctx *flash, uint8_t cmd);
+ int spi_write_status_register(struct flashctx *flash, int status);
+ void spi_prettyprint_status_register_bit(uint8_t status, int bit);
+ int spi_prettyprint_status_register_plain(struct flashctx *flash);
+@@ -107,6 +107,8 @@ int spi_disable_blockprotect_bp2_ep_srwd(struct flashctx *flash);
+ int spi_prettyprint_status_register_sst25(struct flashctx *flash);
+ int spi_prettyprint_status_register_sst25vf016(struct flashctx *flash);
+ int spi_prettyprint_status_register_sst25vf040b(struct flashctx *flash);
++int w25q_get_adp_status(struct flashctx *flash);
++int w25q_set_adp_status(struct flashctx *flash, int enable);
+ 
+ /* sfdp.c */
+ int probe_spi_sfdp(struct flashctx *flash);
+diff --git a/cli_classic.c b/cli_classic.c
+index 441fc919c..d38e4eb44 100644
+--- a/cli_classic.c
++++ b/cli_classic.c
+@@ -31,6 +31,7 @@
+ #include "flashchips.h"
+ #include "programmer.h"
+ #include "libflashrom.h"
++#include "chipdrivers.h"
+ 
+ static void cli_classic_usage(const char *name)
+ {
+@@ -70,8 +71,13 @@ static void cli_classic_usage(const char *name)
+ #if CONFIG_PRINT_WIKI == 1
+ 	         "-z, "
+ #endif
+-	         "-E, -r, -w, -v or no operation.\n"
++	       "-E, -r, -w, -v or no operation.\n"
+ 	       "If no operation is specified, flashrom will only probe for flash chips.\n");
++
++	printf("\n\nAdditional features:\n"
++		   "--adp-status                        Get Winbond ADP status\n"
++		   "--adp-enable                        Enable Winbond ADP feature\n"
++		   "--adp-disable                       Disable Winbond ADP feature\n");
+ }
+ 
+ static void cli_classic_abort_usage(void)
+@@ -106,6 +112,7 @@ int main(int argc, char *argv[])
+ #endif
+ 	int read_it = 0, write_it = 0, erase_it = 0, verify_it = 0;
+ 	int dont_verify_it = 0, dont_verify_all = 0, list_supported = 0, operation_specified = 0;
++	int adp_status = 0, adp_enable = 0, adp_disable = 0;
+ 	struct flashrom_layout *layout = NULL;
+ 	enum programmer prog = PROGRAMMER_INVALID;
+ 	int ret = 0;
+@@ -130,6 +137,9 @@ int main(int argc, char *argv[])
+ 		{"help",		0, NULL, 'h'},
+ 		{"version",		0, NULL, 'R'},
+ 		{"output",		1, NULL, 'o'},
++		{"adp-status",	0, NULL, WINBOND_ADP_STATUS},
++		{"adp-enable",	0, NULL, WINBOND_ADP_ENABLE},
++		{"adp-disable", 0, NULL, WINBOND_ADP_DISABLE},
+ 		{NULL,			0, NULL, 0},
+ 	};
+ 
+@@ -337,6 +347,16 @@ int main(int argc, char *argv[])
+ 			}
+ #endif /* STANDALONE */
+ 			break;
++
++		case WINBOND_ADP_STATUS:
++			adp_status = 1;
++			break;
++		case WINBOND_ADP_ENABLE:
++			adp_enable = 1;
++			break;
++		case WINBOND_ADP_DISABLE:
++			adp_disable = 1;
++			break;
+ 		default:
+ 			cli_classic_abort_usage();
+ 			break;
+@@ -538,7 +558,7 @@ int main(int argc, char *argv[])
+ 		goto out_shutdown;
+ 	}
+ 
+-	if (!(read_it | write_it | verify_it | erase_it)) {
++	if (!(read_it | write_it | verify_it | erase_it | adp_status | adp_enable | adp_disable)) {
+ 		msg_ginfo("No operations were specified.\n");
+ 		goto out_shutdown;
+ 	}
+@@ -564,14 +584,22 @@ int main(int argc, char *argv[])
+ 	 * Give the chip time to settle.
+ 	 */
+ 	programmer_delay(100000);
+-	if (read_it)
++	if (read_it) {
+ 		ret = do_read(fill_flash, filename);
+-	else if (erase_it)
++	} else if (erase_it) {
+ 		ret = do_erase(fill_flash);
+-	else if (write_it)
++	} else if (write_it) {
+ 		ret = do_write(fill_flash, filename);
+-	else if (verify_it)
++	} else if (verify_it) {
+ 		ret = do_verify(fill_flash, filename);
++	} else if (adp_status) {
++		ret = w25q_get_adp_status(fill_flash);
++	} else if (adp_enable) {
++		ret = w25q_set_adp_status(fill_flash, 1);
++	} else if (adp_disable) {
++		ret = w25q_set_adp_status(fill_flash, 0);
++	}
++
+ 
+ 	flashrom_layout_release(layout);
+ 
+diff --git a/it87spi.c b/it87spi.c
+index 0a1e8942f..ee34d5c82 100644
+--- a/it87spi.c
++++ b/it87spi.c
+@@ -365,7 +365,7 @@ static int it8716f_spi_page_program(struct flashctx *flash, const uint8_t *buf,
+ 	/* Wait until the Write-In-Progress bit is cleared.
+ 	 * This usually takes 1-10 ms, so wait in 1 ms steps.
+ 	 */
+-	while (spi_read_status_register(flash) & SPI_SR_WIP)
++	while (spi_read_status_register(flash, JEDEC_RDSR) & SPI_SR_WIP)
+ 		programmer_delay(1000);
+ 	return 0;
+ }
+diff --git a/libflashrom.h b/libflashrom.h
+index d3f3dedcf..ee115cbff 100644
+--- a/libflashrom.h
++++ b/libflashrom.h
+@@ -69,4 +69,12 @@ int flashrom_layout_include_region(struct flashrom_layout *, const char *name);
+ void flashrom_layout_release(struct flashrom_layout *);
+ void flashrom_layout_set(struct flashrom_flashctx *, const struct flashrom_layout *);
+ 
++/*
++ * D-Team args macros
++ * Note: number must be larger than ASCII bytes, i.e. larger than 256
++ */
++#define WINBOND_ADP_STATUS	257
++#define WINBOND_ADP_ENABLE	258
++#define WINBOND_ADP_DISABLE	259
++
+ #endif				/* !__LIBFLASHROM_H__ */
+diff --git a/spi.h b/spi.h
+index 4da7b73f3..d14ba8b04 100644
+--- a/spi.h
++++ b/spi.h
+@@ -123,6 +123,11 @@
+ #define JEDEC_RDSR_OUTSIZE	0x01
+ #define JEDEC_RDSR_INSIZE	0x01
+ 
++/* Read Winbond Status Register */
++#define WINBOND_RDSR_1  JEDEC_RDSR
++#define WINBOND_RDSR_2  0x35
++#define WINBOND_RDSR_3  0x15
++
+ /* Status Register Bits */
+ #define SPI_SR_WIP	(0x01 << 0)
+ #define SPI_SR_WEL	(0x01 << 1)
+@@ -138,6 +143,11 @@
+ #define JEDEC_WRSR_OUTSIZE	0x02
+ #define JEDEC_WRSR_INSIZE	0x00
+ 
++/* Write Winbond Status Register */
++#define WINBOND_WRSR_1  JEDEC_WRSR
++#define WINBOND_WRSR_2  0x31
++#define WINBOND_WRSR_3  0x11
++
+ /* Enter 4-byte Address Mode */
+ #define JEDEC_ENTER_4_BYTE_ADDR_MODE	0xB7
+ 
+diff --git a/spi25.c b/spi25.c
+index c1ffe490c..d2c7c4065 100644
+--- a/spi25.c
++++ b/spi25.c
+@@ -307,7 +307,7 @@ static int spi_poll_wip(struct flashctx *const flash, const unsigned int poll_de
+ {
+ 	/* FIXME: We can't tell if spi_read_status_register() failed. */
+ 	/* FIXME: We don't time out. */
+-	while (spi_read_status_register(flash) & SPI_SR_WIP)
++	while (spi_read_status_register(flash, JEDEC_RDSR) & SPI_SR_WIP)
+ 		programmer_delay(poll_delay);
+ 	/* FIXME: Check the status register for errors. */
+ 	return 0;
+diff --git a/spi25_statusreg.c b/spi25_statusreg.c
+index 05c7acfdc..551ffc641 100644
+--- a/spi25_statusreg.c
++++ b/spi25_statusreg.c
+@@ -6,6 +6,7 @@
+  * Copyright (C) 2008 coresystems GmbH
+  * Copyright (C) 2008 Ronald Hoogenboom <ronald@zonnet.nl>
+  * Copyright (C) 2012 Stefan Tauner
++ * Copyright (C) 2017-2018 "Jackson" Ming Hu, D-Team Technology (Shenzhen) Co, Ltd.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -21,9 +22,46 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+  */
+ 
++#include <string.h>
+ #include "flash.h"
+ #include "chipdrivers.h"
+ #include "spi.h"
++#include "flashchips.h"
++
++struct w25q_status {
++	/* this maps to register layout -- do not change ordering */
++	unsigned char busy : 1;
++	unsigned char wel : 1;
++	unsigned char bp0 : 1;
++	unsigned char bp1 : 1;
++	unsigned char bp2 : 1;
++	unsigned char tb : 1;
++	unsigned char sec : 1;
++	unsigned char srp0 : 1;
++} __attribute__ ((packed));
++
++struct w25q_status_2 {
++	unsigned char srp1 : 1;
++	unsigned char qe : 1;
++	unsigned char rsvd : 1;
++	unsigned char lb1 : 1;
++	unsigned char lb2 : 1;
++	unsigned char lb3 : 1;
++	unsigned char cmp : 1;
++	unsigned char sus : 1;
++} __attribute__ ((packed));
++
++// Ref: https://www.winbond.com/resource-files/w25q256fv_revg1_120214_qpi_website_rev_g.pdf
++// Figure 4c, Page 18
++struct w25q_status_3 {
++	unsigned char ads : 1;
++	unsigned char adp : 1;
++	unsigned char wps : 1;
++	unsigned char rsvd : 2;
++	unsigned char drv0 : 1;
++	unsigned char drv1 : 1;
++	unsigned char hold : 1;
++} __attribute__ ((packed));
+ 
+ /* === Generic functions === */
+ int spi_write_status_enable(struct flashctx *flash)
+@@ -40,7 +78,7 @@ int spi_write_status_enable(struct flashctx *flash)
+ 	return result;
+ }
+ 
+-static int spi_write_status_register_flag(struct flashctx *flash, int status, const unsigned char enable_opcode)
++static int spi_write_status_register_flag(struct flashctx *flash, uint8_t sr_addr, int status, const unsigned char enable_opcode)
+ {
+ 	int result;
+ 	int i = 0;
+@@ -57,7 +95,7 @@ static int spi_write_status_register_flag(struct flashctx *flash, int status, co
+ 		.readarr	= NULL,
+ 	}, {
+ 		.writecnt	= JEDEC_WRSR_OUTSIZE,
+-		.writearr	= (const unsigned char[]){ JEDEC_WRSR, (unsigned char) status },
++		.writearr	= (const unsigned char[]){ sr_addr, (unsigned char) status },
+ 		.readcnt	= 0,
+ 		.readarr	= NULL,
+ 	}, {
+@@ -81,7 +119,7 @@ static int spi_write_status_register_flag(struct flashctx *flash, int status, co
+ 	 * 100 ms, then wait in 10 ms steps until a total of 5 s have elapsed.
+ 	 */
+ 	programmer_delay(100 * 1000);
+-	while (spi_read_status_register(flash) & SPI_SR_WIP) {
++	while (spi_read_status_register(flash, JEDEC_RDSR) & SPI_SR_WIP) {
+ 		if (++i > 490) {
+ 			msg_cerr("Error: WIP bit after WRSR never cleared\n");
+ 			return TIMEOUT_ERROR;
+@@ -102,15 +140,15 @@ int spi_write_status_register(struct flashctx *flash, int status)
+ 		feature_bits |= FEATURE_WRSR_EWSR;
+ 	}
+ 	if (feature_bits & FEATURE_WRSR_WREN)
+-		ret = spi_write_status_register_flag(flash, status, JEDEC_WREN);
++		ret = spi_write_status_register_flag(flash, JEDEC_WRSR, status, JEDEC_WREN);
+ 	if (ret && (feature_bits & FEATURE_WRSR_EWSR))
+-		ret = spi_write_status_register_flag(flash, status, JEDEC_EWSR);
++		ret = spi_write_status_register_flag(flash, JEDEC_WRSR, status, JEDEC_EWSR);
+ 	return ret;
+ }
+ 
+-uint8_t spi_read_status_register(struct flashctx *flash)
++uint8_t spi_read_status_register(struct flashctx *flash, uint8_t sr_addr)
+ {
+-	static const unsigned char cmd[JEDEC_RDSR_OUTSIZE] = { JEDEC_RDSR };
++	const unsigned char cmd[JEDEC_RDSR_OUTSIZE] = { sr_addr };
+ 	/* FIXME: No workarounds for driver/hardware bugs in generic code. */
+ 	unsigned char readarr[2]; /* JEDEC_RDSR_INSIZE=1 but wbsio needs 2 */
+ 	int ret;
+@@ -126,6 +164,111 @@ uint8_t spi_read_status_register(struct flashctx *flash)
+ 	return readarr[0];
+ }
+ 
++static int w25q_set_writeprotect(struct flashctx *flash, int enable)
++{
++	struct w25q_status status;
++	int ret = 0;
++	uint8_t tmp = 0;
++	uint8_t expected = 0;
++
++	memset(&status, 0, sizeof(status));
++	tmp = spi_read_status_register(flash, JEDEC_RDSR);
++
++	/* FIXME: this is NOT endian-free copy. */
++	memcpy(&status, &tmp, 1);
++	msg_cdbg("%s: old status: 0x%02x\n", __func__, tmp);
++
++	status.srp0 = enable ? 1 : 0;
++	memcpy(&expected, &status, sizeof(status));
++	ret = spi_write_status_register_flag(flash, JEDEC_WRSR, expected, JEDEC_WREN);
++
++	tmp = spi_read_status_register(flash, JEDEC_RDSR);
++	msg_cdbg("%s: new status: 0x%02x\n", __func__, tmp);
++
++	return ret;
++}
++
++/* Retrieve ADP status in W25Q SR3 */
++int w25q_get_adp_status(struct flashctx *flash)
++{
++	struct w25q_status_3 sr3;
++	uint8_t buf;
++
++	if(flash->chip->manufacture_id != WINBOND_NEX_ID) {
++		msg_cerr("%s(): Not a Winbond chip, aborting...\n", __func__);
++		return 1;
++	}
++
++	if(!(flash->chip->feature_bits & FEATURE_4BA)
++		&& !(flash->chip->feature_bits & FEATURE_4BA_WREN)) {
++		msg_cerr("%s(): Winbond flash chip found but no 4-byte addressing support!\n", __func__);
++		return 1;
++	}
++
++	buf = spi_read_status_register(flash, WINBOND_RDSR_3);
++	msg_cdbg("%s(): W25Q Status Register with command 0x%02x: 0x%02x\n", __func__, WINBOND_RDSR_3, buf);
++
++	memcpy(&sr3, &buf, 1);
++
++	if(sr3.adp == 1) {
++		msg_cinfo("W25Q256 SR3 ADP has been enabled, flash will operate in 4-byte addressing mode by default!\n");
++	} else {
++		msg_cinfo("W25Q256 SR3 ADP has been disabled, flash will operate in 3-byte addressing mode by default!\n");
++	}
++
++	return 0;
++}
++
++/* Enable ADP feature for W25Q SR3 */
++int w25q_set_adp_status(struct flashctx *flash, int enable)
++{
++	int ret;
++	uint8_t buf;
++	struct w25q_status_3 sr3;
++
++	if(flash->chip->manufacture_id != WINBOND_NEX_ID) {
++		msg_cerr("%s(): Not a Winbond chip, aborting...\n", __func__);
++		return 1;
++	}
++
++	if(!(flash->chip->feature_bits & FEATURE_4BA)
++		&& !(flash->chip->feature_bits & FEATURE_4BA_WREN)) {
++		msg_cerr("%s(): Winbond flash chip found but no 4-byte addressing support!\n", __func__);
++		return 1;
++	}
++
++	if (w25q_set_writeprotect(flash, 1)) {
++		msg_cerr("%s(): cannot disable Status Register Protection!\n", __func__);
++		return 1;
++	}
++
++	buf = spi_read_status_register(flash, WINBOND_RDSR_3);
++	msg_cdbg("%s(): W25Q Status Register with command 0x%02x: 0x%02x\n", __func__, WINBOND_RDSR_3, buf);
++
++	memcpy(&sr3, &buf, 1);
++	buf = 0;
++
++	if(enable) {
++		sr3.adp = 1;
++		msg_cinfo("Enabling ADP...");
++	} else {
++		sr3.adp = 0;
++		msg_cinfo("Disabling ADP...");
++	}
++
++	memcpy(&buf, &sr3, 1);
++	ret = spi_write_status_register_flag(flash, WINBOND_WRSR_3, buf, JEDEC_WREN);
++
++	if(ret) {
++		msg_cerr("FAILED!\n");
++		msg_cerr("%s(): failed to write SR3!\n", __func__);
++	} else {
++		msg_cinfo("SUCCESS!\n");
++	}
++
++	return ret;
++}
++
+ /* A generic block protection disable.
+  * Tests if a protection is enabled with the block protection mask (bp_mask) and returns success otherwise.
+  * Tests if the register bits are locked with the lock_mask (lock_mask).
+@@ -151,7 +294,7 @@ static int spi_disable_blockprotect_generic(struct flashctx *flash, uint8_t bp_m
+ 	uint8_t status;
+ 	int result;
+ 
+-	status = spi_read_status_register(flash);
++	status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	if ((status & bp_mask) == 0) {
+ 		msg_cdbg2("Block protection is disabled.\n");
+ 		return 0;
+@@ -170,7 +313,7 @@ static int spi_disable_blockprotect_generic(struct flashctx *flash, uint8_t bp_m
+ 			msg_cerr("spi_write_status_register failed.\n");
+ 			return result;
+ 		}
+-		status = spi_read_status_register(flash);
++		status = spi_read_status_register(flash, JEDEC_RDSR);
+ 		if ((status & lock_mask) != 0) {
+ 			msg_cerr("Unsetting lock bit(s) failed.\n");
+ 			return 1;
+@@ -183,7 +326,7 @@ static int spi_disable_blockprotect_generic(struct flashctx *flash, uint8_t bp_m
+ 		msg_cerr("spi_write_status_register failed.\n");
+ 		return result;
+ 	}
+-	status = spi_read_status_register(flash);
++	status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	if ((status & bp_mask) != 0) {
+ 		msg_cerr("Block protection could not be disabled!\n");
+ 		flash->chip->printlock(flash);
+@@ -287,7 +430,7 @@ void spi_prettyprint_status_register_bit(uint8_t status, int bit)
+ 
+ int spi_prettyprint_status_register_plain(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 	return 0;
+ }
+@@ -295,7 +438,7 @@ int spi_prettyprint_status_register_plain(struct flashctx *flash)
+ /* Print the plain hex value and the welwip bits only. */
+ int spi_prettyprint_status_register_default_welwip(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_welwip(status);
+@@ -308,7 +451,7 @@ int spi_prettyprint_status_register_default_welwip(struct flashctx *flash)
+  */
+ int spi_prettyprint_status_register_bp1_srwd(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -326,7 +469,7 @@ int spi_prettyprint_status_register_bp1_srwd(struct flashctx *flash)
+  */
+ int spi_prettyprint_status_register_bp2_srwd(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -343,7 +486,7 @@ int spi_prettyprint_status_register_bp2_srwd(struct flashctx *flash)
+  */
+ int spi_prettyprint_status_register_bp3_srwd(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -355,7 +498,7 @@ int spi_prettyprint_status_register_bp3_srwd(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_bp4_srwd(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -366,7 +509,7 @@ int spi_prettyprint_status_register_bp4_srwd(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_bp2_bpl(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_bpl(status);
+@@ -379,7 +522,7 @@ int spi_prettyprint_status_register_bp2_bpl(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_bp2_tb_bpl(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_bpl(status);
+@@ -401,7 +544,7 @@ int spi_prettyprint_status_register_bp2_tb_bpl(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_amic_a25l032(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -457,7 +600,7 @@ static void spi_prettyprint_status_register_atmel_at25_swp(uint8_t status)
+ 
+ int spi_prettyprint_status_register_at25df(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_srpl(status);
+@@ -481,7 +624,7 @@ int spi_prettyprint_status_register_at25f(struct flashctx *flash)
+ {
+ 	uint8_t status;
+ 
+-	status = spi_read_status_register(flash);
++	status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_wpen(status);
+@@ -497,7 +640,7 @@ int spi_prettyprint_status_register_at25f512a(struct flashctx *flash)
+ {
+ 	uint8_t status;
+ 
+-	status = spi_read_status_register(flash);
++	status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_wpen(status);
+@@ -512,7 +655,7 @@ int spi_prettyprint_status_register_at25f512a(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_at25f512b(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_srpl(status);
+@@ -528,7 +671,7 @@ int spi_prettyprint_status_register_at25f4096(struct flashctx *flash)
+ {
+ 	uint8_t status;
+ 
+-	status = spi_read_status_register(flash);
++	status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_wpen(status);
+@@ -541,7 +684,7 @@ int spi_prettyprint_status_register_at25f4096(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_at25fs010(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_wpen(status);
+@@ -561,7 +704,7 @@ int spi_prettyprint_status_register_at25fs010(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_at25fs040(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_wpen(status);
+@@ -573,7 +716,7 @@ int spi_prettyprint_status_register_at25fs040(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_at26df081a(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_atmel_at25_srpl(status);
+@@ -631,7 +774,7 @@ int spi_disable_blockprotect_at25fs040(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_en25s_wp(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -650,7 +793,7 @@ int spi_disable_blockprotect_n25q(struct flashctx *flash)
+ 
+ int spi_prettyprint_status_register_n25q(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -675,7 +818,7 @@ int spi_disable_blockprotect_bp2_ep_srwd(struct flashctx *flash)
+ /* Used by Intel/Numonyx S33 and Spansion S25FL-S chips */
+ int spi_prettyprint_status_register_bp2_ep_srwd(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_hex(status);
+ 
+ 	spi_prettyprint_status_register_srwd(status);
+@@ -703,7 +846,7 @@ static void spi_prettyprint_status_register_sst25_common(uint8_t status)
+ 
+ int spi_prettyprint_status_register_sst25(struct flashctx *flash)
+ {
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_sst25_common(status);
+ 	return 0;
+ }
+@@ -719,7 +862,7 @@ int spi_prettyprint_status_register_sst25vf016(struct flashctx *flash)
+ 		"100000H-1FFFFFH",
+ 		"all", "all"
+ 	};
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_sst25_common(status);
+ 	msg_cdbg("Resulting block protection : %s\n", bpt[(status & 0x1c) >> 2]);
+ 	return 0;
+@@ -734,7 +877,7 @@ int spi_prettyprint_status_register_sst25vf040b(struct flashctx *flash)
+ 		"0x40000-0x7ffff",
+ 		"all blocks", "all blocks", "all blocks", "all blocks"
+ 	};
+-	uint8_t status = spi_read_status_register(flash);
++	uint8_t status = spi_read_status_register(flash, JEDEC_RDSR);
+ 	spi_prettyprint_status_register_sst25_common(status);
+ 	msg_cdbg("Resulting block protection : %s\n", bpt[(status & 0x1c) >> 2]);
+ 	return 0;
