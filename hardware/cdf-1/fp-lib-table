@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name Mounting_Wuerth)(type KiCad)(uri ${KIPRJMOD}/Mounting_Wuerth)(options "")(descr ""))
+)
