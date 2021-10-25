@@ -1,3 +1,6 @@
 (fp_lib_table
   (lib (name Mounting_Wuerth)(type KiCad)(uri ${KIPRJMOD}/Mounting_Wuerth)(options "")(descr ""))
+  (lib (name cdf-1)(type KiCad)(uri ${KIPRJMOD}/cdf-1.pretty)(options "")(descr ""))
+  (lib (name usb1)(type KiCad)(uri ${KIPRJMOD}/usb1)(options "")(descr ""))
+  (lib (name molex_105450-0101)(type KiCad)(uri ${KIPRJMOD}/molex_105450-0101)(options "")(descr ""))
 )
