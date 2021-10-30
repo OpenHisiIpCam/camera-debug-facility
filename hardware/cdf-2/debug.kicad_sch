@@ -1,0 +1,23 @@
+(kicad_sch (version 20210621) (generator eeschema)
+
+  (uuid 9d3fc5fb-95ec-4b7b-8c32-5c9c2f942d62)
+
+  (paper "A4" portrait)
+
+  (lib_symbols
+  )
+
+
+  (hierarchical_label "UART_TX" (shape output) (at 48.26 36.83 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid 7ce1fc12-bb04-4f7c-a974-8a07cae03465)
+  )
+  (hierarchical_label "UART_RX" (shape input) (at 48.26 41.91 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid 6003b084-6642-4060-aa09-4fa46c4d481a)
+  )
+  (hierarchical_label "GND" (shape output) (at 48.26 58.42 0)
+    (effects (font (size 1.27 1.27)) (justify left))
+    (uuid 458ba3bf-c92c-4e07-8ca1-5cc47397f7c2)
+  )
+)
