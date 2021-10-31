@@ -480,6 +480,10 @@
     [
       "e8701222-089c-436c-a6d1-a3066ef58c34",
       "Device Under Test"
+    ],
+    [
+      "b44445aa-ba5e-49d4-a2ca-e1ddf586dc3e",
+      "Old reference"
     ]
   ],
   "text_variables": {}
