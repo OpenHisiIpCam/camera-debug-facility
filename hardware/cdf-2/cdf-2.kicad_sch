@@ -4,6 +4,12 @@
 
   (paper "A4" portrait)
 
+  (title_block
+    (title "Camera Debug Facility")
+    (date "2021-10-31")
+    (rev "2.1.0-pre1")
+  )
+
   (lib_symbols
     (symbol "Mechanical:MountingHole" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "H" (id 0) (at 0 5.08 0)
@@ -1213,6 +1219,15 @@
     (path "/8d2b9dcd-4811-48ac-8b7d-3bed32800c0a"
       (reference "#PWR0110") (unit 1) (value "+3.3VP") (footprint "")
     )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/2ae148dc-ddaf-4e6b-9804-73f6b297bc52"
+      (reference "C?") (unit 1) (value "C") (footprint "")
+    )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/b6986b04-0c90-4132-a81a-ffac14ae6535"
+      (reference "C?") (unit 1) (value "C") (footprint "")
+    )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/fce22e48-c276-4c31-9f23-df1e0e019d18"
+      (reference "C?") (unit 1) (value "C") (footprint "")
+    )
     (path "/e26d693d-79cc-49f8-ac11-25f26cd979c2/73d07b06-5362-44c9-9c0c-56f7774f2601"
       (reference "D1") (unit 1) (value "LED") (footprint "")
     )
@@ -1234,14 +1249,35 @@
     (path "/e26d693d-79cc-49f8-ac11-25f26cd979c2/05096077-f86a-4cdd-b0e0-7d7285454215"
       (reference "J1") (unit 1) (value "USB_B_Micro") (footprint "")
     )
+    (path "/e9888006-94ff-4e3e-b565-fa12f69202a1/81defd71-4e11-45c8-bc03-6b133d397f2c"
+      (reference "J?") (unit 1) (value "Conn_02x04_Counter_Clockwise") (footprint "Package_DIP:DIP-8_W7.62mm_Socket_LongPads")
+    )
     (path "/e26d693d-79cc-49f8-ac11-25f26cd979c2/fc583a5f-dd24-471b-a8e1-68abdd34a1e2"
       (reference "R1") (unit 1) (value "R") (footprint "")
     )
     (path "/e26d693d-79cc-49f8-ac11-25f26cd979c2/305c9ffb-8d50-4c49-a2ba-95cb7887d460"
       (reference "R2") (unit 1) (value "R") (footprint "")
     )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/20300312-7aa4-479a-90c0-6297d4ffa956"
+      (reference "R?") (unit 1) (value "R") (footprint "")
+    )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/75718f18-3c0f-46a4-9ecb-745f2243d9e6"
+      (reference "R?") (unit 1) (value "R") (footprint "")
+    )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/b0246caa-716c-4cf8-838e-c0e7ef70d47f"
+      (reference "R?") (unit 1) (value "R") (footprint "")
+    )
+    (path "/a7f8d0a6-fe7c-418c-a838-59b1d29eaf39/7291b170-34c2-4748-bce4-08a50d42dd83"
+      (reference "SW?") (unit 1) (value "Rotary_Encoder_Switch") (footprint "")
+    )
     (path "/e26d693d-79cc-49f8-ac11-25f26cd979c2/b4d9b18f-d2f8-4486-8c5a-e0108199d157"
       (reference "U1") (unit 1) (value "FT232RL") (footprint "Package_SO:SSOP-28_5.3x10.2mm_P0.65mm")
+    )
+    (path "/e9888006-94ff-4e3e-b565-fa12f69202a1/a20d334e-0605-409d-89ae-485681849595"
+      (reference "U?") (unit 1) (value "SN74CB3Q3257") (footprint "")
+    )
+    (path "/e9888006-94ff-4e3e-b565-fa12f69202a1/df13e492-4f09-45c0-a085-f21fd2748ad8"
+      (reference "U?") (unit 1) (value "SN74CB3Q3257") (footprint "")
     )
   )
 )

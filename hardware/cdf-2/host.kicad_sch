@@ -4,6 +4,12 @@
 
   (paper "A4" portrait)
 
+  (title_block
+    (title "Camera Debug Facility")
+    (date "2021-10-31")
+    (rev "2.1.0-pre1")
+  )
+
   (lib_symbols
   )
 
